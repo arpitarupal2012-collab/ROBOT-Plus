@@ -28,6 +28,7 @@ def main():
     ap.add_argument("--only", nargs="*", help="run only these variants")
     ap.add_argument("--seeds", nargs="*", type=int)
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--set", nargs="*", default=[], help="overrides applied to every variant, e.g. data.root=/data/nih")
     args = ap.parse_args()
 
     with open(args.grid) as f:
@@ -46,8 +47,8 @@ def main():
                 continue
             cmd = [sys.executable, os.path.join(HERE, "train.py"), "--config", base, "--seed", str(s),
                    "--name", name, "--out", args.out]
-            if overrides:
-                cmd += ["--set", *overrides]
+            if overrides or args.set:
+                cmd += ["--set", *args.set, *(overrides or [])]
             print(" ".join(cmd))
             if not args.dry_run:
                 subprocess.run(cmd, check=True)

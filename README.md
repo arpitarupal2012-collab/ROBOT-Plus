@@ -45,17 +45,27 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt        # install the CUDA build of torch first if needed: https://pytorch.org
 pytest -q                              # unit tests, ~10 s on CPU
 python tests/smoke_end_to_end.py       # full pipeline on synthetic data, ~5 min on CPU
+python tests/smoke_new_datasets.py     # MIMIC-CXR, COVIDx, RSNA, leakage check, figures, ~5 min
 ```
 
 ## Data
 
-| Dataset | Where to get it | Set `root:` to |
-|---|---|---|
-| COVID-19 Radiography Database | https://www.kaggle.com/datasets/tawsifurrahman/covid19-radiography-database | folder containing `COVID/ Lung_Opacity/ Normal/ Viral Pneumonia/` |
-| NIH ChestX-ray14 | https://nihcc.app.box.com/v/ChestXray-NIHCC | folder containing `Data_Entry_2017.csv` and `images_*/` |
-| CheXpert v1.0 | https://stanfordmlgroup.github.io/competitions/chexpert/ | `CheXpert-v1.0/` (contains `train.csv`) |
+Six public datasets are supported. Details, folder layout and **overlaps between datasets** are in [`docs/DATASETS.md`](docs/DATASETS.md).
 
-Edit the `root:` paths in `configs/*.yaml`. No data is distributed with this repository.
+| Key | Dataset | Get it with | Used for |
+|---|---|---|---|
+| `nih` | NIH ChestX-ray14 | `bash scripts/download_data.sh nih` (Kaggle `nih-chest-xrays/data`) | in-domain multi-label; transfer source/target |
+| `chexpert` | CheXpert v1.0 | `... chexpert` (Kaggle `ashery/chexpert`) | in-domain multi-label; transfer source/target |
+| `mimic` | MIMIC-CXR-JPG v2.1.0 | `PHYSIONET_USER=… ... mimic` (PhysioNet, credentialed) | institutionally independent transfer target |
+| `rsna` | RSNA Pneumonia Detection Challenge | `... rsna`, then `scripts/prepare_rsna.py` | expert bounding boxes for localisation |
+| `covidx` | COVIDx CXR-3/4 (COVID-Net) | `... covidx` (Kaggle `andyczhao/covidx-cxr2`) | COVID-19 task with a **patient-level** official split |
+| `covid` | COVID-19 Radiography Database | `... covid19rad` | original in-domain experiments (image-level split) |
+
+Leakage-free transfer pairs: **CheXpert ↔ MIMIC-CXR** (identical labels) and **NIH ↔ CheXpert / MIMIC-CXR** (7 shared findings). RSNA, COVIDx and COVID-19 Radiography all contain NIH-derived images: run `scripts/find_cross_dataset_duplicates.py` before evaluating an NIH-trained model on them.
+
+## One-click run on Google Colab
+
+[`notebooks/run_all_colab.ipynb`](notebooks/run_all_colab.ipynb) downloads the data, runs every experiment requested in review (resumable), writes all tables, and draws all figures to Google Drive. [`docs/REVIEW_TRACEABILITY.md`](docs/REVIEW_TRACEABILITY.md) maps each review comment to the run and output file that answers it.
 
 ## Running the experiments
 
@@ -101,6 +111,17 @@ python scripts/explain_localization.py --run results/covid_robotxdpp/seed42 \
 python scripts/complexity.py --config configs/covid_robotxdpp.yaml --num-outputs 4
 ```
 
+```bash
+# 8. Figures for the paper, drawn only from saved outputs (PNG 600 dpi + PDF)
+python scripts/make_figures.py all --root results --out figures
+#    or individually: roc | confusion | curves | bars | transfer | factorial | drift
+python scripts/make_figures.py transfer --per-run results/priority1/tables_target_test/per_run.csv --out figures
+
+# 9. Additional transfer pairs without dataset overlap
+python scripts/train.py --config configs/transfer_chexpert_to_mimic.yaml --seed 42
+python scripts/train.py --config configs/transfer_nih_to_mimic.yaml --seed 42
+```
+
 `run_grid.py` skips finished runs and `train.py` resumes interrupted ones from `last.pth`, which makes Colab-style sessions safe.
 
 ## Statistics
@@ -126,12 +147,12 @@ Report MACs or FLOPs (= 2 × MACs) explicitly; they differ by a factor of two.
 
 ```
 robotxd/            library: data, models, losses, pca, engine, metrics, stats, explain, analysis, complexity
-scripts/            train, run_grid, summarize, factorial_analysis, find_cross_dataset_duplicates,
-                    explain_localization, complexity
+scripts/            train, run_grid, summarize, factorial_analysis, make_figures, download_data.sh,
+                    prepare_rsna, find_cross_dataset_duplicates, explain_localization, complexity
 configs/            one YAML per experiment; grid_*.yaml define ablation / factorial / baseline grids
 tests/              unit tests (pytest) and an end-to-end synthetic smoke test
-notebooks/archive/  original exploratory Colab notebook (outputs stripped)
-docs/               notes on the notebook implementation
+notebooks/          run_all_colab.ipynb (full pipeline); archive/ = original exploratory notebook
+docs/               DATASETS.md, REVIEW_TRACEABILITY.md, NOTEBOOK_NOTES.md
 ```
 
 ## Citation

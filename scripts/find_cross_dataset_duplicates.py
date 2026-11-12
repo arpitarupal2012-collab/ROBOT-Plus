@@ -96,7 +96,10 @@ def main():
     if args.nih_train_split:
         train_pat = set(pd.read_csv(args.nih_train_split)["patient"].astype(str))
         df["in_nih_train"] = df["nih_patient"].astype(str).isin(train_pat)
-    df["target_class"] = df["path"].map(lambda p: os.path.relpath(p, args.target_root).split(os.sep)[0])
+    def _cls(p):
+        parts = os.path.relpath(p, args.target_root).split(os.sep)
+        return parts[0] if len(parts) > 1 else "(root)"
+    df["target_class"] = df["path"].map(_cls)
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     df.to_csv(args.out, index=False)
     print(f"\n{len(df)} target images matched an NIH image (distance <= {args.max_distance}); written to {args.out}")

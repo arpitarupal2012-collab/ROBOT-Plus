@@ -1,0 +1,18 @@
+# COVIDx (COVID-Net project): patient IDs + official test split -> patient-disjoint COVID-19 evaluation.
+# Replaces the image-level COVID-19 Radiography split for the in-domain COVID experiment.
+# label_map unifies naming across COVIDx versions (CXR-3/4 use positive/negative; v8/9 use COVID-19/pneumonia/normal).
+base: _common.yaml
+name: covidx_robotxdpp
+data:
+  dataset: covidx
+  root: /path/to/COVIDx          # contains train/ val/ test/ and train.txt val.txt test.txt
+  split: official
+  split_files: {train: train.txt, val: val.txt, test: test.txt}   # e.g. train_COVIDx_CXR-3B.txt for CXR-3
+  split_dir: splits/covidx_official
+  label_map: {positive: COVID-19, negative: Negative}
+  exclude_sources: []            # set to [rsna] whenever a model trained on NIH ChestX-ray14 is evaluated here
+  image_size: 224
+  augment: paper
+  batch_size: 32
+  num_workers: 8
+  sampler: balanced

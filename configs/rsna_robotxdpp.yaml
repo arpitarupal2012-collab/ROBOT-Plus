@@ -1,0 +1,18 @@
+# RSNA Pneumonia Detection Challenge as a single-label task (3 classes). Mainly used for the
+# localisation evaluation with expert bounding boxes (scripts/prepare_rsna.py -> annotations).
+# RSNA images are a subset of NIH ChestX-ray14: never train on NIH and evaluate on RSNA without
+# running scripts/find_cross_dataset_duplicates.py first.
+base: _common.yaml
+name: rsna_robotxdpp
+data:
+  dataset: rsna
+  root: /path/to/rsna-pneumonia-detection-challenge
+  image_dir: png
+  split_dir: splits/rsna_seed42
+  split_seed: 42
+  fractions: [0.70, 0.15, 0.15]
+  image_size: 224
+  augment: paper
+  batch_size: 32
+  num_workers: 8
+  sampler: balanced

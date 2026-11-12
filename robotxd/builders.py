@@ -27,20 +27,38 @@ from torch.utils.data import DataLoader
 from . import data as D
 
 
+SINGLE_LABEL = {"covid", "rsna", "covidx"}
+
+
 def _table(dcfg: dict):
     ds = dcfg["dataset"]
     if ds == "covid":
         return D.covid_radiography_table(dcfg["root"]), None, False
+    if ds == "rsna":
+        return D.rsna_table(dcfg["root"], dcfg.get("image_dir", "png")), None, False
+    if ds == "covidx":
+        df = D.covidx_table(dcfg["root"], dcfg.get("label_map"), dcfg.get("split_files"))
+        drop = dcfg.get("exclude_sources") or []
+        if drop:  # e.g. ["rsna"] when NIH ChestX-ray14 is the source domain
+            n = len(df)
+            df = df[~df["source"].str.lower().isin([s.lower() for s in drop])].reset_index(drop=True)
+            print(f"COVIDx: excluded {n - len(df)} images from sources {drop}")
+        return df, None, False
     if ds == "nih":
         df, names = D.nih_table(dcfg["root"]), list(D.NIH_LABELS)
     elif ds == "chexpert":
         df, names = D.chexpert_table(dcfg["root"], dcfg.get("csv", "train.csv")), list(D.CHEXPERT_LABELS)
+    elif ds == "mimic":
+        df, names = D.mimic_cxr_table(dcfg["root"]), list(D.CHEXPERT_LABELS)
     else:
         raise ValueError(f"unknown dataset {ds!r}")
-    if dcfg.get("labels", "all") == "shared":
-        if ds == "chexpert":
+    labels = dcfg.get("labels", "all")
+    if labels == "shared":  # NIH <-> CheXpert/MIMIC harmonised findings, NIH names
+        if ds in ("chexpert", "mimic"):
             df = df.rename(columns={v: k for k, v in D.SHARED_NIH_CHEXPERT.items()})
         names = list(D.SHARED_NIH_CHEXPERT)
+    elif labels == "chexpert14_no_nofinding" and ds in ("chexpert", "mimic"):
+        names = [n for n in D.CHEXPERT_LABELS if n != "No Finding"]
     return df, names, True
 
 
@@ -53,9 +71,14 @@ def build_splits(dcfg: dict):
         parts = D.load_split(split_dir)
         print(f"Loaded fixed split from {split_dir}")
     else:
-        parts = D.split_dataframe(df, tuple(dcfg.get("fractions", (0.70, 0.15, 0.15))),
-                                  seed=dcfg.get("split_seed", 42), group_col="patient",
-                                  stratify_col=None if multilabel else "label")
+        if dcfg.get("split", "random") == "official":
+            if "official_split" not in df:
+                raise ValueError(f"{dcfg['dataset']} has no official split; use split: random")
+            parts = D.official_split(df, dcfg.get("val_fraction", 0.15), dcfg.get("split_seed", 42))
+        else:
+            parts = D.split_dataframe(df, tuple(dcfg.get("fractions", (0.70, 0.15, 0.15))),
+                                      seed=dcfg.get("split_seed", 42), group_col="patient",
+                                      stratify_col=None if multilabel else "label")
         if split_dir:
             D.save_split(parts, split_dir)
     class_names = None if multilabel else sorted(df["label"].unique())

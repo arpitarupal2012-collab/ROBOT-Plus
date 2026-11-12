@@ -1,0 +1,15 @@
+# MIMIC-CXR-JPG (PhysioNet, credentialed access), 14 CheXpert-labeler findings, sigmoid + masked BCE.
+# Official patient-level split (train / validate / test) from mimic-cxr-2.x.x-split.csv.
+base: _common.yaml
+name: mimic_robotxdpp
+data:
+  dataset: mimic
+  root: /path/to/mimic-cxr-jpg/2.1.0     # contains files/ and mimic-cxr-2.x.x-{chexpert,metadata,split}.csv.gz
+  split: official
+  split_dir: splits/mimic_official
+  labels: all
+  uncertain: ignore
+  image_size: 224
+  augment: paper
+  batch_size: 32
+  num_workers: 8

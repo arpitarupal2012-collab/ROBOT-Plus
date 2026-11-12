@@ -1,0 +1,19 @@
+base: mimic_robotxdpp.yaml
+name: transfer_mimic_to_chexpert
+data:
+  labels: chexpert14_no_nofinding
+target:
+  dataset: chexpert
+  root: /path/to/CheXpert-v1.0
+  csv: train.csv
+  split_dir: splits/chexpert_seed42
+  split_seed: 42
+  fractions: [0.70, 0.15, 0.15]
+  labels: chexpert14_no_nofinding
+  uncertain: ignore
+  image_size: 224
+  augment: paper
+  batch_size: 32
+  num_workers: 8
+loss:
+  alignment: none

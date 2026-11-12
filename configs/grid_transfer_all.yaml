@@ -1,0 +1,9 @@
+# All leakage-controlled shared-label transfer directions, source-only and UDA, 5 seeds.
+# Run each base separately (run_grid takes one base); this file documents the full set:
+#   transfer_nih_to_chexpert.yaml, transfer_chexpert_to_nih.yaml, transfer_nih_to_mimic.yaml,
+#   transfer_chexpert_to_mimic.yaml, transfer_mimic_to_chexpert.yaml
+base: transfer_chexpert_to_mimic.yaml
+seeds: [42, 7, 13, 21, 99]
+grid:
+  source_only: [loss.alignment=none]
+  uda_centroid: [loss.alignment=centroid]

@@ -1,0 +1,21 @@
+# Cleanest transfer pair: CheXpert (Stanford) -> MIMIC-CXR (Beth Israel). Same 14 labeler outputs,
+# institutionally disjoint, patient-level splits on both sides. SOURCE-ONLY by default.
+# "No Finding" is dropped so that every output is a finding.
+base: chexpert_robotxdpp.yaml
+name: transfer_chexpert_to_mimic
+data:
+  labels: chexpert14_no_nofinding
+  split_dir: splits/chexpert_seed42
+target:
+  dataset: mimic
+  root: /path/to/mimic-cxr-jpg/2.1.0
+  split: official
+  split_dir: splits/mimic_official
+  labels: chexpert14_no_nofinding
+  uncertain: ignore
+  image_size: 224
+  augment: paper
+  batch_size: 32
+  num_workers: 8
+loss:
+  alignment: none

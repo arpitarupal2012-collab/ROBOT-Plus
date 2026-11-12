@@ -1,0 +1,19 @@
+# NIH -> MIMIC-CXR on the 7 harmonised findings (no institutional overlap).
+base: nih_robotxdpp.yaml
+name: transfer_nih_to_mimic
+data:
+  labels: shared
+  split_dir: splits/nih_shared_seed42
+target:
+  dataset: mimic
+  root: /path/to/mimic-cxr-jpg/2.1.0
+  split: official
+  split_dir: splits/mimic_shared_official
+  labels: shared
+  uncertain: ignore
+  image_size: 224
+  augment: paper
+  batch_size: 32
+  num_workers: 8
+loss:
+  alignment: none

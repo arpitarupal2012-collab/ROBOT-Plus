@@ -181,6 +181,76 @@ def chexpert_table(root: str, csv_name: str = "train.csv", frontal_only: bool = 
     return meta[["path", "patient"] + CHEXPERT_LABELS].reset_index(drop=True)
 
 
+def mimic_cxr_table(root: str, frontal_only: bool = True) -> pd.DataFrame:
+    """MIMIC-CXR-JPG v2.x (PhysioNet). Labels come from the CheXpert labeler
+    (``mimic-cxr-2.x.x-chexpert.csv(.gz)``, same 14 names as CheXpert, values 1/0/-1/NaN).
+    The official split file is kept in column ``official_split`` (train / validate / test)."""
+    def find(pattern):
+        hits = sorted(glob.glob(os.path.join(root, pattern)))
+        if not hits:
+            raise FileNotFoundError(f"{pattern} not found under {root}")
+        return hits[-1]
+
+    lab = pd.read_csv(find("mimic-cxr-*-chexpert.csv*"))
+    meta = pd.read_csv(find("mimic-cxr-*-metadata.csv*"), usecols=["dicom_id", "subject_id", "study_id", "ViewPosition"])
+    split = pd.read_csv(find("mimic-cxr-*-split.csv*"))
+    df = meta.merge(lab, on=["subject_id", "study_id"], how="inner").merge(
+        split[["dicom_id", "split"]], on="dicom_id", how="left")
+    if frontal_only:
+        df = df[df["ViewPosition"].isin(["PA", "AP"])]
+    sub = df["subject_id"].astype(str)
+    df["path"] = (root.rstrip("/") + "/files/p" + sub.str[:2] + "/p" + sub + "/s" +
+                  df["study_id"].astype(str) + "/" + df["dicom_id"] + ".jpg")
+    df["patient"] = "mimic_" + sub
+    df = df.rename(columns={"split": "official_split"})
+    return df[["path", "patient", "official_split"] + CHEXPERT_LABELS].reset_index(drop=True)
+
+
+RSNA_CLASSES = ["Normal", "No Lung Opacity / Not Normal", "Lung Opacity"]
+
+
+def rsna_table(root: str, image_dir: str = "png") -> pd.DataFrame:
+    """RSNA Pneumonia Detection Challenge (stage 2 train). Single-label, 3 classes from
+    ``stage_2_detailed_class_info.csv``. Images must first be converted from DICOM with
+    ``scripts/prepare_rsna.py`` (writes ``<root>/png/<patientId>.png``).
+
+    NOTE: these images are a subset of NIH ChestX-ray14. ``patientId`` is a per-image ID, so
+    patient-disjoint splitting against NIH needs ``scripts/find_cross_dataset_duplicates.py``."""
+    info = pd.read_csv(os.path.join(root, "stage_2_detailed_class_info.csv")).drop_duplicates("patientId")
+    info["path"] = info["patientId"].map(lambda p: os.path.join(root, image_dir, f"{p}.png"))
+    info = info[info["path"].map(os.path.exists)]
+    info["patient"] = "rsna_" + info["patientId"]
+    return info.rename(columns={"class": "label"})[["path", "patient", "label"]].reset_index(drop=True)
+
+
+def covidx_table(root: str, label_map: dict | None = None, split_files: dict | None = None) -> pd.DataFrame:
+    """COVIDx (COVID-Net project). Reads the official split files ``train.txt`` / ``val.txt`` /
+    ``test.txt`` (whitespace-separated: patient_id filename label data_source) and images in
+    ``<root>/<split>/``. Keeps the official split in ``official_split`` and the data source in
+    ``source`` (needed to exclude RSNA-derived images when NIH is the source domain)."""
+    rows = []
+    split_files = split_files or {"train": "train.txt", "val": "val.txt", "test": "test.txt"}
+    for split, fname_txt in split_files.items():
+        txt = os.path.join(root, fname_txt)
+        if not os.path.exists(txt):
+            continue
+        with open(txt) as f:
+            for line in f:
+                parts = line.split()
+                if len(parts) < 3:
+                    continue
+                pid, fname, label = parts[0], parts[1], parts[2]
+                source = parts[3] if len(parts) > 3 else "unknown"
+                rows.append((os.path.join(root, split, fname), f"covidx_{pid}", label, source,
+                             "validate" if split == "val" else split))
+    if not rows:
+        raise FileNotFoundError(f"none of {list(split_files.values())} found in {root}")
+    df = pd.DataFrame(rows, columns=["path", "patient", "label", "source", "official_split"])
+    if label_map:
+        df["label"] = df["label"].map(lambda x: label_map.get(x, x))
+    return df
+
+
 # ----------------------------------------------------------------------------- splits
 def split_dataframe(df: pd.DataFrame, fractions=(0.70, 0.15, 0.15), seed: int = 42,
                     group_col: str | None = "patient", stratify_col: str | None = None):
@@ -218,6 +288,29 @@ def _assert_disjoint(parts, col):
         for j in range(i + 1, 3):
             inter = sets[i] & sets[j]
             assert not inter, f"patient leakage between partitions {i} and {j}: {list(inter)[:5]}"
+
+
+def official_split(df: pd.DataFrame, val_fraction: float = 0.15, seed: int = 42, stratify_col=None):
+    """Use the dataset's official test split. Validation = the official validation split if present,
+    otherwise a patient-disjoint share of the official training split."""
+    test = df[df.official_split == "test"]
+    if (df.official_split == "validate").any():
+        train, val = df[df.official_split == "train"], df[df.official_split == "validate"]
+    else:
+        pool = df[df.official_split == "train"]
+        gss = GroupShuffleSplit(n_splits=1, test_size=val_fraction, random_state=seed)
+        tr_idx, va_idx = next(gss.split(pool, groups=pool["patient"]))
+        train, val = pool.iloc[tr_idx], pool.iloc[va_idx]
+    # enforce patient-disjointness even if the official files are not: drop overlapping train/val images
+    held = set(test["patient"])
+    n0 = len(train) + len(val)
+    val = val[~val["patient"].isin(held)]
+    train = train[~train["patient"].isin(held | set(val["patient"]))]
+    if len(train) + len(val) < n0:
+        print(f"WARNING: removed {n0 - len(train) - len(val)} train/val images whose patient is also in a later split")
+    parts = (train.reset_index(drop=True), val.reset_index(drop=True), test.reset_index(drop=True))
+    _assert_disjoint(parts, "patient")
+    return parts
 
 
 def save_split(parts, out_dir: str) -> None:

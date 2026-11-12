@@ -35,6 +35,8 @@ def main():
     ap.add_argument("--method", default="gradcam", choices=["gradcam", "gradcam++", "scorecam"])
     ap.add_argument("--threshold", type=float, default=0.5)
     ap.add_argument("--save-maps", action="store_true")
+    ap.add_argument("--cam-class", default=None,
+                    help="explain this output class for every image (e.g. Pneumonia for an NIH model on RSNA boxes)")
     args = ap.parse_args()
 
     import json
@@ -54,7 +56,7 @@ def main():
         img = Image.open(path).convert("RGB")
         w, h = img.size
         x = tf(img)[None].to(device)
-        cls = names.index(g["label"].iloc[0])
+        cls = names.index(args.cam_class or g["label"].iloc[0])
         cam = dual_stream_cam(model, x, cls, args.method)
         sx, sy = size / w, size / h
         boxes = [(r.x1 * sx, r.y1 * sy, r.x2 * sx, r.y2 * sy) for r in g.itertuples() if not np.isnan(r.x1)]
