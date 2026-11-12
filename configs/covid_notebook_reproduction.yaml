@@ -1,0 +1,32 @@
+# Reproduces the dual-stream model of the ORIGINAL Colab notebook (cells 4-6) as closely as possible.
+# Differences from the manuscript are deliberate and documented in docs/NOTEBOOK_VS_MANUSCRIPT.md:
+#   - "PCA" is a learned Linear(512, 256)       - "alignment" is computed between two halves of the SOURCE batch
+#   - Linear->BN->GELU->Dropout fusion to 512   - balanced sampler AND class-weighted loss, LR patience 3
+base: _common.yaml
+name: covid_notebook_reproduction
+data:
+  dataset: covid
+  root: /path/to/COVID-19_Radiography_Dataset
+  split_dir: splits/covid_seed42
+  split_seed: 42
+  fractions: [0.70, 0.15, 0.15]
+  image_size: 224
+  augment: notebook
+  batch_size: 32
+  num_workers: 2
+  sampler: balanced
+train:
+  lr_patience: 3
+  class_weighted_loss: true
+  amp: false
+loss:
+  decorrelation: gram
+  alignment: notebook_placeholder
+model:
+  arch: robotxdpp_notebook
+  use_eff: true
+  use_dense: true
+  use_pca: true
+  pca_dim: 256
+  latent_dim: 256
+  pretrained: true

@@ -1,0 +1,11 @@
+{
+  "title": "ROBOT-XD++: dimensionality-constrained dual-stream chest X-ray classification (code)",
+  "upload_type": "software",
+  "description": "Code for the manuscript 'ROBOT-XD++: A Dimensionality-Constrained, Transferable, and Explainable Framework for Cross-Dataset Chest X-Ray Classification'.",
+  "creators": [
+    {"name": "Saha Chowdhury, Arpita", "affiliation": "National Institute of Technology Patna"},
+    {"name": "Abhishek, Kumar", "affiliation": "National Institute of Technology Patna"}
+  ],
+  "license": "MIT",
+  "keywords": ["chest X-ray", "transfer learning", "domain adaptation", "PCA", "explainable AI"]
+}

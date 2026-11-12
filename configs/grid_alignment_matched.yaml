@@ -1,0 +1,9 @@
+# Matched alignment comparison (Reviewer 2, comment 6): only the alignment term differs.
+# Tune beta per method on the SOURCE validation split, e.g. --set loss.beta=0.001/0.005/0.01/0.05.
+base: transfer_nih_to_chexpert.yaml
+seeds: [42, 7, 13, 21, 99]
+grid:
+  source_only: [loss.alignment=none]
+  centroid: [loss.alignment=centroid]
+  coral: [loss.alignment=coral]
+  mmd: [loss.alignment=mmd]

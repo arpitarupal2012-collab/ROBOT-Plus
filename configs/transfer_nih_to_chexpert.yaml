@@ -1,0 +1,22 @@
+# Priority experiment 1: NIH -> CheXpert on the 7 harmonised findings. SOURCE-ONLY (no target images in training).
+# Target test predictions are written to pred_target_test.npz.
+base: nih_robotxdpp.yaml
+name: transfer_nih_to_chexpert
+data:
+  labels: shared
+  split_dir: splits/nih_shared_seed42
+target:
+  dataset: chexpert
+  root: /path/to/CheXpert-v1.0
+  csv: train.csv
+  split_dir: splits/chexpert_shared_seed42
+  split_seed: 42
+  fractions: [0.70, 0.15, 0.15]
+  labels: shared
+  uncertain: ignore
+  image_size: 224
+  augment: paper
+  batch_size: 32
+  num_workers: 8
+loss:
+  alignment: none

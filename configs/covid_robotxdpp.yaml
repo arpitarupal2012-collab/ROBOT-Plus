@@ -1,0 +1,16 @@
+# In-domain COVID-19 Radiography (single-label, softmax). No target domain -> no alignment.
+# Patient IDs are not released: the split is image-level (a warning is printed; state it in the paper).
+base: _common.yaml
+name: covid_robotxdpp
+data:
+  dataset: covid
+  root: /path/to/COVID-19_Radiography_Dataset
+  split_dir: splits/covid_seed42
+  split_seed: 42
+  fractions: [0.70, 0.15, 0.15]
+  exclusions: null            # optional: CSV of near-duplicates to drop
+  image_size: 224
+  augment: paper
+  batch_size: 32
+  num_workers: 4
+  sampler: balanced

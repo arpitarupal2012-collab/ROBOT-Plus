@@ -1,0 +1,26 @@
+# Priority experiment 2: 2^3 factorial (compression x decorrelation x alignment) + matched controls,
+# evaluated on NIH -> CheXpert transfer. Backbone, k=256, 40 epochs, splits and seeds fixed.
+# "compression off" = learned linear projection of the same size, so the embedding dimension is constant.
+base: transfer_nih_to_chexpert.yaml
+seeds: [42, 7, 13, 21, 99]
+grid:
+  c0_d0_a0: [model.compression=linear, loss.decorrelation=none, loss.alignment=none]
+  c1_d0_a0: [model.compression=pca,    loss.decorrelation=none, loss.alignment=none]
+  c0_d1_a0: [model.compression=linear, loss.decorrelation=covariance, loss.alignment=none]
+  c0_d0_a1: [model.compression=linear, loss.decorrelation=none, loss.alignment=centroid]
+  c1_d1_a0: [model.compression=pca,    loss.decorrelation=covariance, loss.alignment=none]
+  c1_d0_a1: [model.compression=pca,    loss.decorrelation=none, loss.alignment=centroid]
+  c0_d1_a1: [model.compression=linear, loss.decorrelation=covariance, loss.alignment=centroid]
+  c1_d1_a1: [model.compression=pca,    loss.decorrelation=covariance, loss.alignment=centroid]
+  # controls (not part of the factorial model)
+  ctrl_random_projection: [model.compression=random, loss.decorrelation=covariance, loss.alignment=centroid]
+  ctrl_gram_penalty:      [model.compression=pca,    loss.decorrelation=gram,       loss.alignment=centroid]
+factors:   # used by scripts/factorial_analysis.py
+  c0_d0_a0: {pca: 0, decorrelation: 0, alignment: 0}
+  c1_d0_a0: {pca: 1, decorrelation: 0, alignment: 0}
+  c0_d1_a0: {pca: 0, decorrelation: 1, alignment: 0}
+  c0_d0_a1: {pca: 0, decorrelation: 0, alignment: 1}
+  c1_d1_a0: {pca: 1, decorrelation: 1, alignment: 0}
+  c1_d0_a1: {pca: 1, decorrelation: 0, alignment: 1}
+  c0_d1_a1: {pca: 0, decorrelation: 1, alignment: 1}
+  c1_d1_a1: {pca: 1, decorrelation: 1, alignment: 1}

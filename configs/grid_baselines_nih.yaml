@@ -1,0 +1,8 @@
+# Single-backbone baselines under the identical protocol (sigmoid/BCE, patient-disjoint split).
+base: nih_robotxdpp.yaml
+seeds: [42, 7, 13, 21, 99]
+grid:
+  densenet121: [model.arch=backbone, model.name=densenet121, loss.decorrelation=none, loss.gamma=0]
+  efficientnet_b0: [model.arch=backbone, model.name=efficientnet_b0, loss.decorrelation=none, loss.gamma=0]
+  resnet50: [model.arch=backbone, model.name=resnet50, loss.decorrelation=none, loss.gamma=0]
+  robotxdpp: []

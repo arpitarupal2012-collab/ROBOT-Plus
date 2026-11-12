@@ -1,0 +1,18 @@
+base: chexpert_robotxdpp.yaml
+name: transfer_chexpert_to_nih
+data:
+  labels: shared
+  split_dir: splits/chexpert_shared_seed42
+target:
+  dataset: nih
+  root: /path/to/NIH_ChestXray14
+  split_dir: splits/nih_shared_seed42
+  split_seed: 42
+  fractions: [0.70, 0.15, 0.15]
+  labels: shared
+  image_size: 224
+  augment: paper
+  batch_size: 32
+  num_workers: 8
+loss:
+  alignment: none

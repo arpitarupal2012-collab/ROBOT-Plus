@@ -1,0 +1,30 @@
+# EfficientNet-B3 + MLP bottleneck (notebook cell 26). This single-backbone model produced the
+# 96.03 / 97.41 / 96.15 / 96.75 figures in the submitted manuscript (one run, seed 42, 80/10/10 split).
+# Differences from cell 26: the best-validation checkpoint (not the last epoch) is evaluated,
+# selection uses macro-F1 (cell 26 used accuracy), and ColorJitter is not applied.
+base: _common.yaml
+name: covid_effb3_bottleneck
+data:
+  dataset: covid
+  root: /path/to/COVID-19_Radiography_Dataset
+  split_dir: splits/covid_80_10_10_seed42
+  split_seed: 42
+  fractions: [0.80, 0.10, 0.10]
+  image_size: 224
+  augment: notebook
+  batch_size: 16
+  num_workers: 2
+  sampler: none
+train:
+  weight_decay: 1.0e-4
+  lr_patience: 3
+  grad_clip: 1.0
+loss:
+  decorrelation: none
+  alignment: none
+  gamma: 0.0
+  label_smoothing: 0.1
+model:
+  arch: effb3_bottleneck
+  latent_dim: 128
+  pretrained: true

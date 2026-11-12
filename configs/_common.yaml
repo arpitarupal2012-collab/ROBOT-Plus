@@ -1,0 +1,24 @@
+# Shared defaults (Table 4 of the manuscript). Other configs start with `base: _common.yaml`.
+device: auto
+train:
+  epochs: 40
+  lr: 1.0e-4
+  weight_decay: 1.0e-5
+  lr_patience: 5
+  lr_factor: 0.5
+  amp: true
+loss:
+  decorrelation: covariance   # covariance (rank-aware) | gram (original Eq. 41) | none
+  alpha: 0.01
+  alignment: none             # none | centroid | coral | mmd   (anything but none needs a `target:` section)
+  beta: 0.005
+  gamma: 1.0e-4
+model:
+  arch: robotxdpp
+  use_eff: true
+  use_dense: true
+  compression: pca            # pca | random | linear | none
+  k: 256
+  latent_dim: 256
+  dropout: 0.3
+  pretrained: true

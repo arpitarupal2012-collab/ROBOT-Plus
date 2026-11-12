@@ -1,0 +1,14 @@
+# Component-removal ablation, in-domain COVID-19 Radiography. All variants share split, budget and seeds.
+base: covid_robotxdpp.yaml
+seeds: [42, 7, 13, 21, 99]
+grid:
+  full: []
+  efficientnet_only: [model.use_dense=false]
+  densenet_only: [model.use_eff=false]
+  no_compression: [model.compression=none]
+  learned_projection: [model.compression=linear]
+  random_projection: [model.compression=random]
+  pca_k128: [model.k=128]
+  pca_k384: [model.k=384]
+  no_decorrelation: [loss.decorrelation=none]
+  gram_penalty_original: [loss.decorrelation=gram]

@@ -1,0 +1,16 @@
+# CheXpert, 14 observations, sigmoid outputs + masked BCE, patient-disjoint split built from patient IDs.
+base: _common.yaml
+name: chexpert_robotxdpp
+data:
+  dataset: chexpert
+  root: /path/to/CheXpert-v1.0         # contains train.csv; image paths in the CSV are relative to its parent
+  csv: train.csv
+  split_dir: splits/chexpert_seed42
+  split_seed: 42
+  fractions: [0.70, 0.15, 0.15]
+  labels: all
+  uncertain: ignore                    # ignore (masked) | zeros | ones
+  image_size: 224
+  augment: paper
+  batch_size: 32
+  num_workers: 8

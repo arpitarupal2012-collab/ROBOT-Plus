@@ -1,0 +1,14 @@
+# NIH ChestX-ray14, 14 findings, sigmoid outputs + masked BCE, patient-disjoint split.
+base: _common.yaml
+name: nih_robotxdpp
+data:
+  dataset: nih
+  root: /path/to/NIH_ChestXray14       # contains Data_Entry_2017.csv and images*/
+  split_dir: splits/nih_seed42
+  split_seed: 42
+  fractions: [0.70, 0.15, 0.15]
+  labels: all
+  image_size: 224
+  augment: paper
+  batch_size: 32
+  num_workers: 8
