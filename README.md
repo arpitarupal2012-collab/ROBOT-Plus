@@ -151,9 +151,14 @@ scripts/            train, run_grid, summarize, factorial_analysis, make_figures
                     prepare_rsna, find_cross_dataset_duplicates, explain_localization, complexity
 configs/            one YAML per experiment; grid_*.yaml define ablation / factorial / baseline grids
 tests/              unit tests (pytest) and an end-to-end synthetic smoke test
+paper/figures/      the 33 figures of the manuscript (file names as in the LaTeX source)
 notebooks/          run_all_colab.ipynb (full pipeline); archive/ = original exploratory notebook
 docs/               DATASETS.md, REVIEW_TRACEABILITY.md, NOTEBOOK_NOTES.md
 ```
+
+## Manuscript figures
+
+All figures of the manuscript are in [`paper/figures/`](paper/figures/), with an index mapping each file to its LaTeX label. Result figures will be replaced by versions regenerated with `scripts/make_figures.py` once the revision experiments are complete.
 
 ## Citation
 
